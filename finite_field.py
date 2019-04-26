@@ -175,6 +175,22 @@ class FiniteFieldElement:
         else:
             raise TypeError(f'Unsupported power type {type(other)}')
 
+    def square_root(self):
+        """
+        Get squre root of element over a finite field.
+        Source: https://www.researchgate.net/publication/320402737_An_Algorithm_to_Find_Square_Root_of_Quadratic_Residues_over_Finite_Fields_using_Primitive_Elements
+        :return: FiniteFieldElement
+        """
+        g = FiniteField(self.modulo).primitive_element
+        g0 = g ** 2
+        if self.value == g0:
+            return g0
+        else:
+            k = 1
+            while (g0 ** k).value != self.value:
+                k += 1
+            return g ** k
+
 
 class FiniteField:
     """
@@ -189,6 +205,8 @@ class FiniteField:
         :param modulo: Size of the finite field
         """
         self.modulo = modulo
+        #self.primitive_elements = self.get_primitive_elements()
+        self.primitive_element = self.get_primitive_element()
 
     def get_element(self, int_elem):
         """
@@ -204,3 +222,36 @@ class FiniteField:
 
     def print(self):
         print(f'Finite field of size {self.modulo}')
+
+    def get_primitive_elements(self):
+        """
+        Algorithm to find primitive elements
+        of the finite fields.
+        Source: https://www.researchgate.net/publication/320402737_An_Algorithm_to_Find_Square_Root_of_Quadratic_Residues_over_Finite_Fields_using_Primitive_Elements
+        :return: List of primitive elements
+        """
+        p_elems = []
+        for a in range(2, self.modulo):
+            i = 0
+            q0 = FiniteFieldElement(1, self.modulo)
+            while q0.value != 1 or i == 0:
+                q0 = q0 * a
+                i += 1
+            if i == self.modulo-1:
+                p_elems.append(FiniteFieldElement(a, self.modulo))
+        return p_elems
+
+    def get_primitive_element(self):
+        """
+        For square root only one primitive
+         element is necessary.
+        :return: First primitive element found
+        """
+        for a in range(2, self.modulo):
+            i = 0
+            q0 = FiniteFieldElement(1, self.modulo)
+            while q0.value != 1 or i == 0:
+                q0 = q0 * a
+                i += 1
+            if i == self.modulo - 1:
+                return FiniteFieldElement(a, self.modulo)
