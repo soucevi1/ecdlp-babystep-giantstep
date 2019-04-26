@@ -1,12 +1,10 @@
 
-# Trida konecneho telesa
-# pamatuje si svuj modul, umi vyrobit svuj prvek ze zadaneho cisla
-
-# Extra trida pro prvek konecneho telesa
-# Pretizene operace +-*/, hledani inverze
-
-
 class FiniteFieldElement:
+    """
+    Class representing one element of a finite field.
+    Every element has its value, modulo and
+    special operations on its field.
+    """
 
     def __init__(self, value, modulo):
         """
@@ -150,6 +148,32 @@ class FiniteFieldElement:
             return other / self
         else:
             raise TypeError(f'Division of {type(other)} and FiniteFieldElement not implemented.')
+
+    def __pow__(self, power):
+        """
+        Overloaded power operator.
+        :param power: Power
+        :return: Power of element.
+        """
+        if isinstance(power, int):
+            return FiniteFieldElement(self.value**power, self.modulo)
+        elif isinstance(power, FiniteFieldElement):
+            return FiniteFieldElement(self.value**power.value, self.modulo)
+        else:
+            raise TypeError(f'Unsupported power type {type(power)}')
+
+    def __rpow__(self, other):
+        """
+        Overloaded power operator.
+        :param other: Power
+        :return: Power of element.
+        """
+        if isinstance(other, int):
+            return FiniteFieldElement(other**self.value, self.modulo)
+        elif isinstance(other, FiniteFieldElement):
+            return FiniteFieldElement(other.value ** self.value , self.modulo)
+        else:
+            raise TypeError(f'Unsupported power type {type(other)}')
 
 
 class FiniteField:
