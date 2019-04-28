@@ -1,5 +1,5 @@
 import random
-from math import ceil
+from math import ceil, inf, gcd
 from finite_field import FiniteFieldElement, FiniteField
 
 
@@ -17,8 +17,10 @@ class EllipticCurve:
         :param b: Coefficient b
         :param ff: FiniteField of the curve
         """
-        if not isinstance(a, FiniteFieldElement) or not isinstance(b, FiniteFieldElement):
-            raise TypeError('This elliptic curve only supports finite field elements')
+        if isinstance(a, int):
+            a = ff.get_element(a)
+        if isinstance(b, int):
+            b = ff.get_element(b)
         self.a = a
         self.b = b
         self.finite_field = ff
@@ -34,6 +36,10 @@ class EllipticCurve:
         :param y: Y cooordinate
         :return: bool
         """
+        if isinstance(x, int):
+            x = self.finite_field.get_element(x)
+        if isinstance(y, int):
+            y = self.finite_field.get_element(y)
         return y ** 2 == x ** 3 + self.a * x + self.b
 
     def __str__(self):
@@ -42,10 +48,11 @@ class EllipticCurve:
     def random_point(self):
         x = 0
         res = 0
+        p = int((self.finite_field.modulo-1)/2)
         while True:
             x = FiniteFieldElement(random.randint(0, self.finite_field.modulo), self.finite_field.modulo)
             res = x**3 + self.a * x + self.b
-            quadr = res ** ((self.finite_field.modulo-1)/2)
+            quadr = res ** p
             if quadr == 1:
                 break
 
@@ -54,28 +61,7 @@ class EllipticCurve:
         return ECPoint(x, y, self)
 
     def order(self):
-        while True:
-            point = self.random_point()
-            m = ceil(self.finite_field.modulo ** float(1/4))
-
-            baby_steps = []
-            for j in range(m+1):
-                baby_steps.append(j*point)
-
-            q = (2*m + 1)*point
-            r = (self.finite_field.modulo+1)*point
-
-            matches = []
-            t = ceil((2 * self.finite_field.modulo**float(1/2))/(2*m+1))
-
-            for i in range(1, t+1):
-                new_point = r + i*q
-                for j in range(len(baby_steps)):
-                    if (new_point.x, new_point.y) == (baby_steps[j].x, baby_steps[j].y):
-                        matches.append(self.finite_field.modulo + 1 + i*(2*m+1)-j)
-            if len(matches) == 1:
-                return matches[0]
-            print(f'Unsuccessful bsgs: {len(matches)} matches')
+        raise NotImplementedError('The order of the EC is not implemented yet.')
 
 
 class ECPoint:
@@ -144,7 +130,7 @@ class ECPoint:
                 return ECPointAtInfinity(self.curve)
 
         r1 = l**2 - self.x - other.x
-        r2 = l*(self.x - other.x) - self.y
+        r2 = l*(self.x - r1) - self.y
         return ECPoint(r1, r2, self.curve)
 
     def __sub__(self, other):
@@ -188,6 +174,71 @@ class ECPoint:
         """
         return self * n
 
+    def __eq__(self, other):
+        """
+        Overloaded == operator
+        :param other: Other ECPoint
+        :return: True if self == other, False otherwise
+        """
+        return (self.x, self.y) == (other.x, other.y)
+
+    def order(self):
+        """
+        Get an order of the EC point
+        using babystep-giantstep algorithm.
+        Inspired by: https://en.wikipedia.org/wiki/Counting_points_on_elliptic_curves#Baby-step_giant-step
+        :return: The order of the point
+        """
+        # Normal start of BSGS to find order of the whole elliptic curve
+        m = ceil(self.curve.finite_field.modulo ** float(1 / 4))
+        P = self
+        baby_steps = []
+
+        # Prepare the baby steps
+        for j in range(m + 1):
+            baby_steps.append(j * P)
+
+        Q = (self.curve.finite_field.modulo + 1) * P
+
+        k = 0
+        j = 0
+        while True:
+            # Calculate one giant step
+            new_point = Q + k * (2 * m * P)
+            br = False
+
+            # Compare the GS with all BS to find a match
+            for i in range(len(baby_steps)):
+                # Compare with j*P and also -j*P
+                if new_point == baby_steps[i]:
+                    j = -i
+                    br = True
+                    break
+                if new_point == -baby_steps[i]:
+                    j = i
+                    br = True
+            if br:
+                break
+            k += 1
+
+        # Calculate M such that M*P = 0
+        # => M is a multiple of the order of P
+        M = self.curve.finite_field.modulo + 1 + 2 * m * k + j
+
+        # Factor M to prime factors
+        factors = factor(M)
+
+        # Divide M by its factors
+        # until the smallest possible x
+        # such as x*P = 0 is found
+        for f in factors:
+            x = int(M / f)
+            xp = x * P
+            if isinstance(xp, ECPointAtInfinity):
+                M = x
+
+        return M
+
 
 class ECPointAtInfinity(ECPoint):
     """
@@ -195,6 +246,8 @@ class ECPointAtInfinity(ECPoint):
     """
 
     def __init__(self, curve):
+        self.x = inf
+        self.y = inf
         self.curve = curve
 
     def __neg__(self):
@@ -235,3 +288,33 @@ class ECPointAtInfinity(ECPoint):
         """
         return type(other) is ECPointAtInfinity
 
+
+def factor(n):
+    """
+    Factor number to prime factors.
+    Source: https://stackoverflow.com/a/22808285/6136143
+    :param n: Number to factor
+    :return: List of factors.
+    """
+    i = 2
+    factors = []
+    while i * i <= n:
+        if n % i:
+            i += 1
+        else:
+            n //= i
+            factors.append(i)
+    if n > 1:
+        factors.append(n)
+    return factors
+
+
+def lcm(a, b):
+    """
+    Find the least common multiple of a and b.
+    Source: https://stackoverflow.com/a/51716959/6136143
+    :param a: First number
+    :param b: Second number
+    :return: Least common multiple of a and b
+    """
+    return abs(a*b) // gcd(a, b)

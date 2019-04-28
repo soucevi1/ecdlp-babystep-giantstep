@@ -1,3 +1,4 @@
+from math import inf
 
 class FiniteFieldElement:
     """
@@ -14,7 +15,12 @@ class FiniteFieldElement:
         :param modulo: Modulo of the finite field
         """
         self.modulo = modulo
-        self.value = value % modulo
+        if isinstance(value, FiniteFieldElement):
+            self.value = value.value % modulo
+        elif isinstance(value, int):
+            self.value = value % modulo
+        else:
+            raise TypeError(f'Type {type(value)} cannot be used in FFE constructor')
 
     def __str__(self):
         """
@@ -105,6 +111,8 @@ class FiniteFieldElement:
         https://stackoverflow.com/a/17957069/6136143
         :return: Multiplicative inverse of the element.
         """
+        if self.value == 1:
+            return self.value
         if self.modulo % self.value == 0:
             raise ValueError(f'Failed to invert {self.value}! {self.modulo} is a multiple of {self.value}.')
         a, b = self.modulo, self.value
@@ -160,7 +168,7 @@ class FiniteFieldElement:
         elif isinstance(power, FiniteFieldElement):
             return FiniteFieldElement(self.value**power.value, self.modulo)
         else:
-            raise TypeError(f'Unsupported power type {type(power)}')
+            raise TypeError(f'Unsupported power type: {type(power)}, value {power}')
 
     def __rpow__(self, other):
         """
@@ -190,6 +198,16 @@ class FiniteFieldElement:
             while (g0 ** k).value != self.value:
                 k += 1
             return g ** k
+
+    def __eq__(self, other):
+        if isinstance(other, int):
+            return self.value == other
+        elif isinstance(other, FiniteFieldElement):
+            return self.value == other.value
+        elif other is inf:
+            return False
+        else:
+            raise TypeError(f'Cannot compare FF element and {type(other)}')
 
 
 class FiniteField:
