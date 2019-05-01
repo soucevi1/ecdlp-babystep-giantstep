@@ -1,5 +1,6 @@
 from math import inf
 
+
 class FiniteFieldElement:
     """
     Class representing one element of a finite field.
@@ -87,7 +88,7 @@ class FiniteFieldElement:
         elif isinstance(other, FiniteFieldElement):
             return FiniteFieldElement(self.value * other.value, self.modulo)
         else:
-            raise TypeError(f'Multiplying {type(other)} and FiniteFieldElement not implemented')
+            raise TypeError(f'Multiplying {type(other)} (value {other}) and FiniteFieldElement not implemented')
 
     def __rmul__(self, other):
         """
@@ -183,6 +184,24 @@ class FiniteFieldElement:
         else:
             raise TypeError(f'Unsupported power type {type(other)}')
 
+    def __lt__(self, other):
+        if isinstance(other, int):
+            return self.value < other
+        if isinstance(other, FiniteFieldElement):
+            return self.value < other.value
+        if other is inf:
+            return False
+        raise TypeError(f'Comarison between FFE and {type(other)}')
+
+    def __gt__(self, other):
+        if isinstance(other, int):
+            return self.value > other
+        if isinstance(other, FiniteFieldElement):
+            return self.value > other.value
+        if other is inf:
+            return False
+        raise TypeError(f'Comarison between FFE and {type(other)}')
+
     def square_root(self):
         """
         Get squre root of element over a finite field.
@@ -223,8 +242,8 @@ class FiniteField:
         :param modulo: Size of the finite field
         """
         self.modulo = modulo
-        #self.primitive_elements = self.get_primitive_elements()
-        self.primitive_element = self.get_primitive_element()
+        # self.primitive_elements = self.get_primitive_elements()
+        # self.primitive_element = self.get_primitive_element()
 
     def get_element(self, int_elem):
         """

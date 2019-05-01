@@ -1,5 +1,5 @@
 import random
-from math import ceil, inf, gcd
+from math import ceil, inf, gcd, sqrt
 from finite_field import FiniteFieldElement, FiniteField
 
 
@@ -60,8 +60,12 @@ class EllipticCurve:
         y = y_2.square_root()
         return ECPoint(x, y, self)
 
-    def order(self):
-        raise NotImplementedError('The order of the EC is not implemented yet.')
+    def order_approx(self):
+        """
+        Approximation according to Hasse theorem.
+        :return: Upper bound of the order.
+        """
+        return self.finite_field.modulo + 1 + 2*sqrt(self.finite_field.modulo)
 
 
 class ECPoint:
@@ -72,8 +76,8 @@ class ECPoint:
 
     def __init__(self, x, y, curve):
         self.curve = curve
-        self.x = x
-        self.y = y
+        self.x = FiniteFieldElement(x, self.curve.finite_field.modulo)
+        self.y = FiniteFieldElement(y, self.curve.finite_field.modulo)
 
         if not curve.is_point(x, y):
             raise ValueError(f'The point {self} is not on the curve {curve}!')
@@ -239,6 +243,21 @@ class ECPoint:
 
         return M
 
+    def order_approx(self):
+        """
+        The upper bound of the EC point order
+        is the order of the EC itself.
+        :return: Approx. of the order of the EC
+        """
+        return self.curve.order_approx()
+
+    def __lt__(self, other):
+        if self.x < other.x:
+            return True
+        if self.x > other.x:
+            return False
+        return self.y < other.y
+
 
 class ECPointAtInfinity(ECPoint):
     """
@@ -318,3 +337,24 @@ def lcm(a, b):
     :return: Least common multiple of a and b
     """
     return abs(a*b) // gcd(a, b)
+
+
+def binary_search(element_list, element):
+    """
+    Source: https://stackoverflow.com/a/4161779/6136143
+    :param element_list: List of elements (BabyStepPoints)
+    :param element: Element to look for (ECPoint)
+    :return:
+    """
+    hi = len(element_list)
+    lo = 0
+    while lo < hi:
+        mid = (lo+hi)//2
+        midval = element_list[mid].point
+        if midval < element:
+            lo = mid+1
+        elif midval > element:
+            hi = mid
+        else:
+            return element_list[mid].index
+    return -1
