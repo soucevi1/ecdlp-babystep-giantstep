@@ -165,9 +165,9 @@ class FiniteFieldElement:
         :return: Power of element.
         """
         if isinstance(power, int):
-            return FiniteFieldElement(self.value**power, self.modulo)
+            return FiniteFieldElement(self.value ** power, self.modulo)
         elif isinstance(power, FiniteFieldElement):
-            return FiniteFieldElement(self.value**power.value, self.modulo)
+            return FiniteFieldElement(self.value ** power.value, self.modulo)
         else:
             raise TypeError(f'Unsupported power type: {type(power)}, value {power}')
 
@@ -178,22 +178,32 @@ class FiniteFieldElement:
         :return: Power of element.
         """
         if isinstance(other, int):
-            return FiniteFieldElement(other**self.value, self.modulo)
+            return FiniteFieldElement(other ** self.value, self.modulo)
         elif isinstance(other, FiniteFieldElement):
-            return FiniteFieldElement(other.value ** self.value , self.modulo)
+            return FiniteFieldElement(other.value ** self.value, self.modulo)
         else:
             raise TypeError(f'Unsupported power type {type(other)}')
 
     def __lt__(self, other):
+        """
+        Overloaded less-than operator.
+        :param other: Other Finite Field Element
+        :return: Bool
+        """
         if isinstance(other, int):
             return self.value < other
         if isinstance(other, FiniteFieldElement):
             return self.value < other.value
         if other is inf:
             return False
-        raise TypeError(f'Comarison between FFE and {type(other)}')
+        raise TypeError(f'Comparison between FFE and {type(other)}')
 
     def __gt__(self, other):
+        """
+        Overloaded greater-than operator.
+        :param other: Other Finite Field Element
+        :return: Bool
+        """
         if isinstance(other, int):
             return self.value > other
         if isinstance(other, FiniteFieldElement):
@@ -205,10 +215,11 @@ class FiniteFieldElement:
     def square_root(self):
         """
         Get squre root of element over a finite field.
-        Source: https://www.researchgate.net/publication/320402737_An_Algorithm_to_Find_Square_Root_of_Quadratic_Residues_over_Finite_Fields_using_Primitive_Elements
+        Source: https://www.researchgate.net/publication/
+        320402737_An_Algorithm_to_Find_Square_Root_of_Quadratic_Residues_over_Finite_Fields_using_Primitive_Elements
         :return: FiniteFieldElement
         """
-        g = FiniteField(self.modulo).primitive_element
+        g = FiniteField(self.modulo).get_primitive_element()
         g0 = g ** 2
         if self.value == g0:
             return g0
@@ -219,6 +230,11 @@ class FiniteFieldElement:
             return g ** k
 
     def __eq__(self, other):
+        """
+        Overloaded == operator.
+        :param other: Other Finite Field Element
+        :return: Bool
+        """
         if isinstance(other, int):
             return self.value == other
         elif isinstance(other, FiniteFieldElement):
@@ -242,8 +258,6 @@ class FiniteField:
         :param modulo: Size of the finite field
         """
         self.modulo = modulo
-        # self.primitive_elements = self.get_primitive_elements()
-        # self.primitive_element = self.get_primitive_element()
 
     def get_element(self, int_elem):
         """
@@ -258,13 +272,14 @@ class FiniteField:
         return FiniteFieldElement(int_elem, self.modulo)
 
     def print(self):
-        print(f'Finite field of size {self.modulo}')
+        print(f'Finite field of size {self.modulo:,}')
 
     def get_primitive_elements(self):
         """
         Algorithm to find primitive elements
         of the finite fields.
-        Source: https://www.researchgate.net/publication/320402737_An_Algorithm_to_Find_Square_Root_of_Quadratic_Residues_over_Finite_Fields_using_Primitive_Elements
+        Source: https://www.researchgate.net/publication/
+        320402737_An_Algorithm_to_Find_Square_Root_of_Quadratic_Residues_over_Finite_Fields_using_Primitive_Elements
         :return: List of primitive elements
         """
         p_elems = []
@@ -274,7 +289,7 @@ class FiniteField:
             while q0.value != 1 or i == 0:
                 q0 = q0 * a
                 i += 1
-            if i == self.modulo-1:
+            if i == self.modulo - 1:
                 p_elems.append(FiniteFieldElement(a, self.modulo))
         return p_elems
 

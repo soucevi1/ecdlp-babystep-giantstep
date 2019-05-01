@@ -1,6 +1,6 @@
 import bsgs
-from finite_field import FiniteField, FiniteFieldElement
 from elliptic_curve import EllipticCurve, ECPoint
+from finite_field import FiniteField
 
 
 def test_initialize():
@@ -25,8 +25,8 @@ def test_initialize():
     m1 = 496
     m2 = 1759
 
-    Q1 = m1*P
-    Q2 = m2*P
+    Q1 = m1 * P
+    Q2 = m2 * P
 
     return P, Q1, Q2
 
@@ -57,20 +57,19 @@ def initialize():
 
 
 def main():
-
     P, Q1, Q2 = initialize()
-    #P, Q1, Q2 = test_initialize()
+    # P, Q1, Q2 = test_initialize()
 
     qlist = [Q1, Q2]
     for i in range(len(qlist)):
-        print(f'Point Q{i+1}: {qlist[i]}')
+        print(f'Point Q{i + 1}: {qlist[i]}')
     print('')
 
     results = bsgs.find_logarithm(qlist, P)
 
     for i in range(len(results)):
         print('================================================')
-        print(f'lop_P Q{i+1} = {results[i]}')
+        print(f'lop_P Q{i + 1} = {results[i]}')
         print(f'Result is correct: {results[i] * P == qlist[i]}')
 
     print('================================================')

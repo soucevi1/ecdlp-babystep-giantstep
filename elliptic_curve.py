@@ -1,6 +1,7 @@
 import random
-from math import ceil, inf, gcd, sqrt
-from finite_field import FiniteFieldElement, FiniteField
+from math import ceil, inf, sqrt
+from finite_field import FiniteFieldElement
+from helper_tools import factor
 
 
 class EllipticCurve:
@@ -9,6 +10,7 @@ class EllipticCurve:
     in the simplified form.
     Inspired by: https://github.com/j2kun/elliptic-curves-finite-fields
     """
+
     def __init__(self, a, b, ff):
         """
         Elliptic curve in the simplified form.
@@ -25,7 +27,7 @@ class EllipticCurve:
         self.b = b
         self.finite_field = ff
 
-        if 4*a**3 + 27*b**2 == 0:
+        if 4 * a ** 3 + 27 * b ** 2 == 0:
             raise ValueError('Bad curve: 4a^3 + 27b^2 mustn\'t be 0')
 
     def is_point(self, x, y):
@@ -33,7 +35,7 @@ class EllipticCurve:
         Test whether the point [x,y]
         belongs to the curve.
         :param x: X coordinate
-        :param y: Y cooordinate
+        :param y: Y coordinate
         :return: bool
         """
         if isinstance(x, int):
@@ -46,12 +48,16 @@ class EllipticCurve:
         return f'y^2 = x^3 + {self.a}x + {self.b}'
 
     def random_point(self):
+        """
+        Return a random point on the curve.
+        :return:
+        """
         x = 0
         res = 0
-        p = int((self.finite_field.modulo-1)/2)
+        p = int((self.finite_field.modulo - 1) / 2)
         while True:
             x = FiniteFieldElement(random.randint(0, self.finite_field.modulo), self.finite_field.modulo)
-            res = x**3 + self.a * x + self.b
+            res = x ** 3 + self.a * x + self.b
             quadr = res ** p
             if quadr == 1:
                 break
@@ -65,7 +71,7 @@ class EllipticCurve:
         Approximation according to Hasse theorem.
         :return: Upper bound of the order.
         """
-        return self.finite_field.modulo + 1 + 2*sqrt(self.finite_field.modulo)
+        return self.finite_field.modulo + 1 + 2 * sqrt(self.finite_field.modulo)
 
 
 class ECPoint:
@@ -116,30 +122,27 @@ class ECPoint:
         if (self.x, self.y) == (other.x, -other.y):
             return ECPointAtInfinity(self.curve)
 
-        # Prepare lambda parameter
-        l = 0
-
         # P = Q
         if (self.x, self.y) == (other.x, other.y):
             try:
-                l = (3 * (self.x ** 2) + self.curve.a) / (2 * self.y)
+                lam = (3 * (self.x ** 2) + self.curve.a) / (2 * self.y)
             except ZeroDivisionError:
                 return ECPointAtInfinity(self.curve)
         # P != Q
         else:
             try:
-                l = (other.y - self.y) / (other.x - self.x)
+                lam = (other.y - self.y) / (other.x - self.x)
             # x1 == x2
             except ZeroDivisionError:
                 return ECPointAtInfinity(self.curve)
 
-        r1 = l**2 - self.x - other.x
-        r2 = l*(self.x - r1) - self.y
+        r1 = lam ** 2 - self.x - other.x
+        r2 = lam * (self.x - r1) - self.y
         return ECPoint(r1, r2, self.curve)
 
     def __sub__(self, other):
         """
-        Substraction of two EC points.
+        Difference of two EC points.
         :param other: Other EC point
         :return: ECPoint
         """
@@ -196,11 +199,12 @@ class ECPoint:
         # Normal start of BSGS to find order of the whole elliptic curve
         m = ceil(self.curve.finite_field.modulo ** float(1 / 4))
         P = self
-        baby_steps = []
-
+        baby_steps = [ECPointAtInfinity(self.curve)]
+        R = P
         # Prepare the baby steps
-        for j in range(m + 1):
-            baby_steps.append(j * P)
+        for j in range(1, m - 1):
+            baby_steps.append(R)
+            R = R + P
 
         Q = (self.curve.finite_field.modulo + 1) * P
 
@@ -252,6 +256,11 @@ class ECPoint:
         return self.curve.order_approx()
 
     def __lt__(self, other):
+        """
+        Overloaded less-than operator.
+        :param other: Other ECPoint
+        :return:
+        """
         if self.x < other.x:
             return True
         if self.x > other.x:
@@ -306,55 +315,3 @@ class ECPointAtInfinity(ECPoint):
         :return: bool
         """
         return type(other) is ECPointAtInfinity
-
-
-def factor(n):
-    """
-    Factor number to prime factors.
-    Source: https://stackoverflow.com/a/22808285/6136143
-    :param n: Number to factor
-    :return: List of factors.
-    """
-    i = 2
-    factors = []
-    while i * i <= n:
-        if n % i:
-            i += 1
-        else:
-            n //= i
-            factors.append(i)
-    if n > 1:
-        factors.append(n)
-    return factors
-
-
-def lcm(a, b):
-    """
-    Find the least common multiple of a and b.
-    Source: https://stackoverflow.com/a/51716959/6136143
-    :param a: First number
-    :param b: Second number
-    :return: Least common multiple of a and b
-    """
-    return abs(a*b) // gcd(a, b)
-
-
-def binary_search(element_list, element):
-    """
-    Source: https://stackoverflow.com/a/4161779/6136143
-    :param element_list: List of elements (BabyStepPoints)
-    :param element: Element to look for (ECPoint)
-    :return:
-    """
-    hi = len(element_list)
-    lo = 0
-    while lo < hi:
-        mid = (lo+hi)//2
-        midval = element_list[mid].point
-        if midval < element:
-            lo = mid+1
-        elif midval > element:
-            hi = mid
-        else:
-            return element_list[mid].index
-    return -1

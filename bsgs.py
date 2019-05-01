@@ -1,16 +1,7 @@
-from elliptic_curve import ECPointAtInfinity, binary_search
+from elliptic_curve import ECPointAtInfinity
 from math import ceil, sqrt
 import time
-
-
-class BabyStepPoint:
-
-    def __init__(self, point, index):
-        self.point = point
-        self.index = index
-
-    def __lt__(self, other):
-        return self.point < other.point
+from helper_tools import BabyStepPoint, binary_search
 
 
 def generate_baby_steps(p, m):
@@ -21,12 +12,12 @@ def generate_baby_steps(p, m):
     :param m: number of babysteps
     :return:
     """
-    print(f'Generating {m:_} baby steps...')
+    print(f'Generating {m:,} baby steps...')
     # return [a*p for a in range(m-1)]
     b = ECPointAtInfinity(p.curve)
     baby_steps = [BabyStepPoint(b, 0)]
-    for i in range(1, m-1):
-        b = p+b
+    for i in range(1, m - 1):
+        b = p + b
         baby_steps.append(BabyStepPoint(b, i))
     print('Sorting baby steps for more efficient search...')
     baby_steps.sort()
@@ -54,7 +45,7 @@ def giant_steps(p, q, baby_steps, m):
             j += 1
             continue
         print(f'Collision! Index in baby steps: {i}, index in giant steps: {j}')
-        result = i + j*m
+        result = i + j * m
         return result
 
 
@@ -66,7 +57,6 @@ def find_logarithm(q_list, p):
     :param p: ECPoint P
     :return: list of logarithms for all Qs
     """
-    # r = p.order()
     r = p.order_approx()
     m = ceil(sqrt(r))
 
@@ -74,9 +64,9 @@ def find_logarithm(q_list, p):
     baby_steps = generate_baby_steps(p, m)
     end = time.time()
 
-    print(f'Babysteps generated and sorted in {(end-begin):.3f} seconds.\n')
+    print(f'Babysteps generated and sorted in {(end - begin):.3f} seconds.\n')
 
-    p2 = m*p
+    p2 = m * p
 
     res_list = []
 
@@ -84,6 +74,6 @@ def find_logarithm(q_list, p):
         begin = time.time()
         res_list.append(giant_steps(p2, i, baby_steps, m))
         end = time.time()
-        print(f'Logarithm of point {i} found in {(end-begin):.3f} seconds.\n')
+        print(f'Logarithm of point {i} found in {(end - begin):.3f} seconds.\n')
 
     return res_list
