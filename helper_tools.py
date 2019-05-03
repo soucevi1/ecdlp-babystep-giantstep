@@ -1,4 +1,8 @@
 
+# Module with other needed tools for ECDLP.
+# Author: Vit Soucek
+
+
 class BabyStepPoint:
     """
     Helper class to store generated

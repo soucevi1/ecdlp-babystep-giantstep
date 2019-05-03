@@ -1,3 +1,7 @@
+
+# The main module of the ECDLP-BSGS program.
+# Author: Vit Soucek
+
 import bsgs
 from elliptic_curve import EllipticCurve, ECPoint
 from finite_field import FiniteField

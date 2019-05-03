@@ -1,3 +1,7 @@
+
+# Module for babystep-giantstep ECDLP calculation.
+# Author: Vit Soucek
+
 from elliptic_curve import ECPointAtInfinity
 from math import ceil, sqrt
 import time

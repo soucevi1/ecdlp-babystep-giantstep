@@ -1,3 +1,7 @@
+
+# Module for elliptic curve operations.
+# Author: Vit Soucek
+
 from math import inf, sqrt
 from finite_field import FiniteFieldElement
 

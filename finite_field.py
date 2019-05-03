@@ -1,3 +1,7 @@
+
+# Module for finite field operations.
+# Author: Vit Soucek
+
 from math import inf
 
 

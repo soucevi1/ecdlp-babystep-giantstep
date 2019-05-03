@@ -1,5 +1,7 @@
+=========================
 Implementační úkol MI-MKY
 =========================
+Autor: Vít Souček (soucevi1@fit.cvut.cz)
 
 Zadání
 ------
