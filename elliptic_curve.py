@@ -1,7 +1,5 @@
-import random
-from math import ceil, inf, sqrt
+from math import inf, sqrt
 from finite_field import FiniteFieldElement
-from helper_tools import factor
 
 
 class EllipticCurve:
@@ -47,24 +45,13 @@ class EllipticCurve:
     def __str__(self):
         return f'y^2 = x^3 + {self.a}x + {self.b}'
 
-    def random_point(self):
+    def __eq__(self, other):
         """
-        Return a random point on the curve.
-        :return:
+        Overloaded == operator
+        :param other: Other elliptic curve
+        :return: Bool
         """
-        x = 0
-        res = 0
-        p = int((self.finite_field.modulo - 1) / 2)
-        while True:
-            x = FiniteFieldElement(random.randint(0, self.finite_field.modulo), self.finite_field.modulo)
-            res = x ** 3 + self.a * x + self.b
-            quadr = res ** p
-            if quadr == 1:
-                break
-
-        y_2 = FiniteFieldElement(res, self.finite_field.modulo)
-        y = y_2.square_root()
-        return ECPoint(x, y, self)
+        return (self.a, self.b) == (other.a, other.b)
 
     def order_approx(self):
         """
@@ -102,13 +89,13 @@ class ECPoint:
     def __add__(self, other):
         """
         Add operation of two EC points
-        as defined in the handout.
+        as defined in the handouts.
         :param other: Other EC point
         :return: ECPoint
         """
 
         if self.curve != other.curve:
-            raise ValueError('Can\'t add points on different curves!')
+            raise ValueError('Cannot add points on different curves!')
 
         # P + 0 = P
         if isinstance(other, ECPointAtInfinity):
@@ -155,23 +142,23 @@ class ECPoint:
         :return: ECPoint
         """
         if not isinstance(n, int):
-            raise TypeError(f'Can\'t multiply an ECPoint by {type(n)}!')
+            raise TypeError(f'Cannot multiply an ECPoint by {type(n)}!')
         else:
             if n < 0:
                 return -self * -n
             if n == 0:
                 return ECPointAtInfinity(self.curve)
-            Q = self
-            R = self if n & 1 == 1 else ECPointAtInfinity(self.curve)
+            point_q = self
+            point_r = self if n & 1 == 1 else ECPointAtInfinity(self.curve)
             i = 2
             while i <= n:
                 # double
-                Q = Q + Q
+                point_q = point_q + point_q
                 if n & i == i:
                     # add
-                    R = Q + R
+                    point_r = point_q + point_r
                 i = i << 1
-            return R
+            return point_r
 
     def __rmul__(self, n):
         """
@@ -187,65 +174,7 @@ class ECPoint:
         :param other: Other ECPoint
         :return: True if self == other, False otherwise
         """
-        return (self.x, self.y) == (other.x, other.y)
-
-    def order(self):
-        """
-        Get an order of the EC point
-        using babystep-giantstep algorithm.
-        Inspired by: https://en.wikipedia.org/wiki/Counting_points_on_elliptic_curves#Baby-step_giant-step
-        :return: The order of the point
-        """
-        # Normal start of BSGS to find order of the whole elliptic curve
-        m = ceil(self.curve.finite_field.modulo ** float(1 / 4))
-        P = self
-        baby_steps = [ECPointAtInfinity(self.curve)]
-        R = P
-        # Prepare the baby steps
-        for j in range(1, m - 1):
-            baby_steps.append(R)
-            R = R + P
-
-        Q = (self.curve.finite_field.modulo + 1) * P
-
-        k = 0
-        j = 0
-        while True:
-            # Calculate one giant step
-            new_point = Q + k * (2 * m * P)
-            br = False
-
-            # Compare the GS with all BS to find a match
-            for i in range(len(baby_steps)):
-                # Compare with j*P and also -j*P
-                if new_point == baby_steps[i]:
-                    j = -i
-                    br = True
-                    break
-                if new_point == -baby_steps[i]:
-                    j = i
-                    br = True
-            if br:
-                break
-            k += 1
-
-        # Calculate M such that M*P = 0
-        # => M is a multiple of the order of P
-        M = self.curve.finite_field.modulo + 1 + 2 * m * k + j
-
-        # Factor M to prime factors
-        factors = factor(M)
-
-        # Divide M by its factors
-        # until the smallest possible x
-        # such as x*P = 0 is found
-        for f in factors:
-            x = int(M / f)
-            xp = x * P
-            if isinstance(xp, ECPointAtInfinity):
-                M = x
-
-        return M
+        return (self.x, self.y, self.curve) == (other.x, other.y, other.curve)
 
     def order_approx(self):
         """
@@ -257,9 +186,10 @@ class ECPoint:
 
     def __lt__(self, other):
         """
-        Overloaded less-than operator.
+        Overloaded less-than operator
+        for sorting purposes.
         :param other: Other ECPoint
-        :return:
+        :return: Bool
         """
         if self.x < other.x:
             return True
@@ -305,7 +235,7 @@ class ECPointAtInfinity(ECPoint):
         :return: ECPointAtInfinity
         """
         if not isinstance(n, int):
-            raise TypeError(f'Can\'t multiply a point by {type(n)}!')
+            raise TypeError(f'Cannot multiply a point by {type(n)}!')
         return self
 
     def __eq__(self, other):

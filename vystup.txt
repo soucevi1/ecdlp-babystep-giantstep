@@ -1,0 +1,29 @@
+Searching x such as: x = log_P Q
+--------------------------------
+Creating finite field: 
+Finite field of size 4,398,046,512,701
+
+Creating elliptic curve: 
+y^2 = x^3 + 0x + 1
+
+Point P: [3, 678235393584]
+Point Q1: [3480506547504, 2007642106263]
+Point Q2: [3563933383778, 1990746467823]
+
+Generating 2,097,154 baby steps...
+Sorting baby steps for more efficient search...
+Babysteps generated and sorted in 88.239 seconds.
+
+Collision! Index in baby steps: 1143186, index in giant steps: 667346
+Logarithm of point [3480506547504, 2007642106263] found in 49.974 seconds.
+
+Collision! Index in baby steps: 1484133, index in giant steps: 1014739
+Logarithm of point [3563933383778, 1990746467823] found in 74.768 seconds.
+
+================================================
+lop_P Q1 = 1399528476470
+Result is correct: True
+================================================
+lop_P Q2 = 2128065436939
+Result is correct: True
+================================================
